@@ -29,11 +29,10 @@
       }
       move(dx: labeloffset + measure(label, sty).width/2,
           move(dx: -(labeloffset + measure(label, sty).width/2),
-          block(width: width,
-            stack(
-              dir: ttb, spacing: 3pt,
-              move(dx: labeloffset, label),
-              move(dx: termoffset, term)))))
+          stack(
+            dir: ttb, spacing: 3pt,
+            move(dx: labeloffset, label),
+            move(dx: termoffset, term))))
     })
   }
 }
@@ -59,16 +58,15 @@ style(sty => {
 #let branch(..terms) = style(sty => {
   if terms.pos().len() == 1 {
     let term = terms.pos().first()
-    let width = measure(term, sty).width
-    move(dx: width/2,
-      move(dx: -width/2,
-      block(width: width,
-          stack(dir: ttb, spacing: 3pt,
-            align(center,
-              if term != "" {
-                line(stroke: 0.5pt, length: 12pt, angle: 90deg)
-              }),
-            term))))
+    let tdx = getdx(term, sty)
+    move(dx: tdx,
+      move(dx: -tdx,
+        stack(dir: ttb, spacing: 3pt,
+          if term != "" {
+            move(dx: tdx - 0.5pt,
+              line(stroke: 0.5pt, length: 12pt, angle: 90deg))
+          },
+          term)))
   } else if terms.pos().len() >= 2 {
     let (left, right) = terms.pos()
     let leftwidth = measure(left, sty).width
@@ -85,8 +83,7 @@ style(sty => {
       line(stroke: 0.5pt, start: (labelmid - leftdx, 12pt), end: (0pt,0pt)))
     move(dx: labelmid,
       move(dx: -labelmid,
-        block(width: width,
-          stack(dir: ttb, spacing: 3pt, top, bottom))))
+          stack(dir: ttb, spacing: 3pt, top, bottom)))
   }
 })
 
