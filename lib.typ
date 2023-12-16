@@ -1,10 +1,11 @@
 #let max(a, b) = if a > b { a } else { b }
 
+// The `dx' value attached via metadata to each node/branch is the amount of horizontal space that the node/branch should be offset. For simple (non-branching) nodes, this is half of the node's width.
 #let getdx(x, sty) = {
   if type(x) == "content" {
     x = if repr(x.func()) == "style" { (x.func)(sty) } else { x }
-    if x.func() == move and "dx" in x.fields() {
-      x.dx
+    if repr(x.func()) == "sequence" and x.children.first().func() == metadata {
+      x.children.first().value.dx
     } else {
       measure(x, sty).width/2
     }
@@ -27,46 +28,26 @@
       } else {
         labeloffset = tdx - measure(label, sty).width/2
       }
-      move(dx: labeloffset + measure(label, sty).width/2,
-          move(dx: -(labeloffset + measure(label, sty).width/2),
-          stack(
-            dir: ttb, spacing: 3pt,
-            move(dx: labeloffset, label),
-            move(dx: termoffset, term))))
+      metadata((dx: labeloffset + measure(label, sty).width/2))
+      stack(
+        dir: ttb, spacing: 3pt,
+        move(dx: labeloffset, label),
+        move(dx: termoffset, term))
     })
   }
 }
-
-/*
-style(sty => {
-  let m(x) = measure(x, sty)
-  let term = if term.pos().len() > 0 { term.pos().first() } else { "" }
-  let w = max(m(label).width, m(term).width)
-  move(dx: -w/2,
-    block(width: w,
-      align(center,
-        stack(
-          dir: ttb, spacing: 3pt,
-          label,
-          if term != "" {
-            line(stroke: 0.5pt, length: 12pt, angle: 90deg)
-          },
-          term))))
-})
-*/
 
 #let branch(..terms) = style(sty => {
   if terms.pos().len() == 1 {
     let term = terms.pos().first()
     let tdx = getdx(term, sty)
-    move(dx: tdx,
-      move(dx: -tdx,
-        stack(dir: ttb, spacing: 3pt,
-          if term != "" {
-            move(dx: tdx - 0.5pt,
-              line(stroke: 0.5pt, length: 12pt, angle: 90deg))
-          },
-          term)))
+    metadata((dx: tdx))
+    stack(dir: ttb, spacing: 3pt,
+      if term != "" {
+        move(dx: tdx - 0.5pt,
+          line(stroke: 0.5pt, length: 12pt, angle: 90deg))
+      },
+      term)
   } else if terms.pos().len() >= 2 {
     let (left, right) = terms.pos()
     let leftwidth = measure(left, sty).width
@@ -81,9 +62,8 @@ style(sty => {
     let top = stack(dir: ltr,
       line(stroke: 0.5pt, start: (leftdx, 12pt), end: (labelmid,0pt)),
       line(stroke: 0.5pt, start: (labelmid - leftdx, 12pt), end: (0pt,0pt)))
-    move(dx: labelmid,
-      move(dx: -labelmid,
-          stack(dir: ttb, spacing: 3pt, top, bottom)))
+    metadata((dx: labelmid))
+    stack(dir: ttb, spacing: 3pt, top, bottom)
   }
 })
 
