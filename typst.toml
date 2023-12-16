@@ -1,0 +1,10 @@
+[package]
+name = "x-bar"
+version = "0.1.0"
+compiler = "0.9.0"
+repository = "https://github.com/jocap/typst-x-bar"
+entrypoint = "lib.typ"
+authors = ["John Ankarström"]
+license = "MIT"
+keywords = "syntax grammar trees forest linguistics x-bar"
+description = "Typst package for drawing binary, particularly X-bar-schematic syntax trees."
