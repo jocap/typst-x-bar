@@ -1,5 +1,6 @@
 #let make-label
 #let make-category
+#let with-arrows
 
 #{
   // The `dx' value attached via metadata to each node/branch is the amount of horizontal space that the node/branch should be offset. For simple (non-branching) nodes, this is half of the node's width.
@@ -16,9 +17,26 @@
     }
   }
   
+  let getchildren(x, sty) = {
+    if type(x) == "content" {
+      x = if repr(x.func()) == "style" { (x.func)(sty) } else { x }
+      if repr(x.func()) == "sequence" and x.children.first().func() == metadata {
+        x.children.first().value.children
+      } else {
+        ()
+      }
+    } else {
+      ()
+    }
+  }
+
+  let updatechildren(children, dx, dy) = {
+    children.map(c => (c.at(0), (c.at(1).at(0)+dx, c.at(1).at(1)+dy)))
+  }
+  
   let node(label, ..term) = {
     let max(a, b) = if a > b { a } else { b }
-  
+    
     if term.pos().len() == 0 {
       label
     } else {
@@ -32,7 +50,9 @@
         } else {
           labeloffset = tdx - measure(label, sty).width/2
         }
-        metadata((dx: labeloffset + measure(label, sty).width/2))
+        metadata((
+          dx: labeloffset + measure(label, sty).width/2,
+          children: updatechildren(getchildren(term, sty), termoffset, measure(label, sty).height+3pt)))
         stack(
           dir: ttb, spacing: 3pt,
           move(dx: labeloffset, label),
@@ -53,11 +73,11 @@
       " "
     }
   }
-  
+
   let branch(..terms) = style(sty => {
     if terms.pos().len() == 1 {
       let term = terms.pos().first()
-  
+      
       let s = if type(term) == str {
         term
       } else if type(term) == content {
@@ -65,10 +85,10 @@
       } else {
         ""
       }
-  
+      
       let roof = s.match(regex(" ")) != none
       let tdx = getdx(term, sty)
-      metadata((dx: tdx))
+      metadata((dx: tdx, children: ((term, (measure(term, sty).width/2, 3pt+12pt+measure(term, sty).height)),)))
       stack(dir: ttb, spacing: 3pt,
         if term != "" {
           if roof {
@@ -86,18 +106,59 @@
       let width = leftwidth + rightwidth + 6pt
       let leftdx = getdx(left, sty)
       let rightdx = getdx(right, sty)
-      let bottom = stack(dir: ltr, spacing: 6pt,
-        move(left),
-        move(right))
+      let bottom = stack(dir: ltr, spacing: 6pt, left, right)
       let labelmid = leftdx + ((width - rightwidth + rightdx) - leftdx)/2
       let top = stack(dir: ltr,
         line(stroke: 0.5pt, start: (leftdx, 12pt), end: (labelmid,0pt)),
         line(stroke: 0.5pt, start: (labelmid - leftdx, 12pt), end: (0pt,0pt)))
-      metadata((dx: labelmid))
+      metadata((
+        dx: labelmid,
+        children: updatechildren(getchildren(left, sty), 0pt, 12pt+3pt)
+          + updatechildren(getchildren(right, sty), leftwidth+6pt, 12pt+3pt)))
       stack(dir: ttb, spacing: 3pt, top, bottom)
     }
   })
   
+  let getchild(tree, term, sty) = {
+    let children = (tree.func)(sty).children.at(0).value.children
+    let found
+    for child in children {
+      if child.first() == term {
+        found = child
+        break
+      }
+    }
+    if found != none {
+      found.at(1)
+    }
+  }
+  
+  with-arrows = (tree, ..pairs) => style(sty => {
+    let pairs = pairs.pos()
+    let lowest = 0pt
+    for pair in pairs {
+      let (d, t) = pair.map(term => getchild(tree, term, sty))
+      if d.at(0) > t.at(0) {
+        let tmp = d
+        d = t
+        t = tmp
+      }
+      let p = path(stroke: 0.5pt,
+        ((d.at(0), d.at(1) + 4pt), (0pt, -(t.at(1)-d.at(1)))),
+        ((t.at(0), t.at(1) + 4pt), (-(t.at(1)-d.at(1))/3, 36pt)))
+      place(p)
+      let (w, h) = (3pt, 4pt)
+      place(dx: d.at(0), dy: d.at(1) + 4pt,
+        polygon(fill: black, stroke: 0.5pt,
+          (-w/2, h), (0pt, 0pt), (w/2, h)))
+      let low = measure(p, sty).height
+      if low > lowest { lowest = low }
+    }
+    tree
+    let diff = lowest - measure(tree, sty).height
+    if diff > 0pt { v(diff) }
+  })
+
   make-label = (label) => (..rest) => {
     if rest.pos().len() == 0 {
       node(label)
