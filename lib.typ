@@ -169,7 +169,7 @@
   
   make-category = (label) => (
     make-label(label+"P"), 
-    make-label(label+text("′", font: "TeX Gyre Termes Math")), 
+    make-label(label+"′"), 
     make-label(label))
 }
 
