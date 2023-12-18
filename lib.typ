@@ -3,6 +3,8 @@
 #let with-arrows
 
 #{
+  let node-spacing = 8pt
+
   // The `dx' value attached via metadata to each node/branch is the amount of horizontal space that the node/branch should be offset. For simple (non-branching) nodes, this is half of the node's width.
   let getdx(x, sty) = {
     if type(x) == "content" {
@@ -16,7 +18,7 @@
       measure(x, sty).width/2
     }
   }
-  
+
   let getchildren(x, sty) = {
     if type(x) == "content" {
       x = if repr(x.func()) == "style" { (x.func)(sty) } else { x }
@@ -33,10 +35,10 @@
   let updatechildren(children, dx, dy) = {
     children.map(c => (c.at(0), (c.at(1).at(0)+dx, c.at(1).at(1)+dy)))
   }
-  
+
   let node(label, ..term) = {
     let max(a, b) = if a > b { a } else { b }
-    
+
     if term.pos().len() == 0 {
       label
     } else {
@@ -60,7 +62,7 @@
       })
     }
   }
-  
+
   // https://github.com/typst/typst/issues/2196#issuecomment-1728135476
   let to-string(content) = {
     if content.has("text") {
@@ -78,7 +80,7 @@
     if terms.pos().len() == 1 {
       let term = terms.pos().first()
       if term == [] { term = "" }
-      
+
       let s = if type(term) == str {
         term
       } else if type(term) == content {
@@ -86,7 +88,7 @@
       } else {
         ""
       }
-      
+
       let roof = s.match(regex(" ")) != none
       let tdx = getdx(term, sty)
       metadata((dx: tdx, children: ((term, (measure(term, sty).width/2, 3pt+12pt+measure(term, sty).height)),)))
@@ -104,10 +106,10 @@
       let (left, right) = terms.pos()
       let leftwidth = measure(left, sty).width
       let rightwidth = measure(right, sty).width
-      let width = leftwidth + rightwidth + 6pt
+      let width = leftwidth + rightwidth + node-spacing
       let leftdx = getdx(left, sty)
       let rightdx = getdx(right, sty)
-      let bottom = stack(dir: ltr, spacing: 6pt, left, right)
+      let bottom = stack(dir: ltr, spacing: node-spacing, left, right)
       let labelmid = leftdx + ((width - rightwidth + rightdx) - leftdx)/2
       let top = stack(dir: ltr,
         line(stroke: 0.5pt, start: (leftdx, 12pt), end: (labelmid,0pt)),
@@ -115,11 +117,11 @@
       metadata((
         dx: labelmid,
         children: updatechildren(getchildren(left, sty), 0pt, 12pt+3pt)
-          + updatechildren(getchildren(right, sty), leftwidth+6pt, 12pt+3pt)))
+          + updatechildren(getchildren(right, sty), leftwidth+node-spacing, 12pt+3pt)))
       stack(dir: ttb, spacing: 3pt, top, bottom)
     }
   })
-  
+
   let getchild(tree, term, sty) = {
     let children = (tree.func)(sty).children.at(0).value.children
     let found
@@ -133,7 +135,7 @@
       found.at(1)
     }
   }
-  
+
   with-arrows = (tree, ..pairs) => style(sty => {
     let pairs = pairs.pos()
     let lowest = 0pt
@@ -167,7 +169,7 @@
       node(label, branch(..rest))
     }
   }
-  
+
   make-category = (label) => (
     make-label(label+"P"), 
     make-label(label+"′"), 
