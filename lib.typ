@@ -19,6 +19,7 @@
     }
   }
 
+  // The `children' value attached via metadata to each node/branch contains an array of pairs that specify the horizontal and vertical position of each terminal in the tree. This information is used by `with-arrows'.
   let getchildren(x, sty) = {
     if type(x) == "content" {
       x = if repr(x.func()) == "style" { (x.func)(sty) } else { x }
@@ -32,10 +33,12 @@
     }
   }
 
+  // At each extension of the tree, the positions in the `children' value are updated to account for the horizontal and vertical extension of the tree.
   let updatechildren(children, dx, dy) = {
     children.map(c => (c.at(0), (c.at(1).at(0)+dx, c.at(1).at(1)+dy)))
   }
 
+  // Place `label' above `term'. If `term' is content returned by `node' or `branch', then position it correctly according to the attached metadata.
   let node(label, ..term) = {
     let max(a, b) = if a > b { a } else { b }
 
@@ -76,6 +79,7 @@
     }
   }
 
+  // Create a unary or binary branch between given `terms'.
   let branch(..terms) = style(sty => {
     if terms.pos().len() == 1 {
       let term = terms.pos().first()
@@ -122,6 +126,7 @@
     }
   })
 
+  // Using the `children' value, return the terminal in `tree' that is equal to `term'. This is used by `with-arrows'.
   let getchild(tree, term, sty) = {
     let children = (tree.func)(sty).children.at(0).value.children
     let found
@@ -136,6 +141,7 @@
     }
   }
 
+  // Display `tree' with movement arrows between the terminals specified in `pairs'.
   with-arrows = (tree, ..pairs) => style(sty => {
     let pairs = pairs.pos()
     let lowest = 0pt
@@ -162,6 +168,7 @@
     if diff > 0pt { v(diff) }
   })
 
+  // Curry `node' with `label'.
   make-label = (label) => (..rest) => {
     if rest.pos().len() == 0 {
       node(label)
@@ -170,6 +177,7 @@
     }
   }
 
+  // Create node functions for `label' at phrase-, bar- and head-level.
   make-category = (label) => (
     make-label(label+"P"), 
     make-label(label+"′"), 
