@@ -77,6 +77,7 @@
   let branch(..terms) = style(sty => {
     if terms.pos().len() == 1 {
       let term = terms.pos().first()
+      if term == [] { term = "" }
       
       let s = if type(term) == str {
         term
