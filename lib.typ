@@ -1,9 +1,14 @@
+// Exports //
 #let make-label
 #let make-category
 #let with-arrows
+#let with-node-spacing
 
 #{
-  let node-spacing = 8pt
+  let node-spacing(sty) = {
+    let ns = measure(metadata("x-bar-node-spacing"), sty).width
+    if ns == 0pt { 8pt } else { ns }
+  }
 
   // The `dx' value attached via metadata to each node/branch is the amount of horizontal space that the node/branch should be offset. For simple (non-branching) nodes, this is half of the node's width.
   let getdx(x, sty) = {
@@ -110,10 +115,10 @@
       let (left, right) = terms.pos()
       let leftwidth = measure(left, sty).width
       let rightwidth = measure(right, sty).width
-      let width = leftwidth + rightwidth + node-spacing
+      let width = leftwidth + rightwidth + node-spacing(sty)
       let leftdx = getdx(left, sty)
       let rightdx = getdx(right, sty)
-      let bottom = stack(dir: ltr, spacing: node-spacing, left, right)
+      let bottom = stack(dir: ltr, spacing: node-spacing(sty), left, right)
       let labelmid = leftdx + ((width - rightwidth + rightdx) - leftdx)/2
       let top = stack(dir: ltr,
         line(stroke: 0.5pt, start: (leftdx, 12pt), end: (labelmid,0pt)),
@@ -121,7 +126,7 @@
       metadata((
         dx: labelmid,
         children: updatechildren(getchildren(left, sty), 0pt, 12pt+3pt)
-          + updatechildren(getchildren(right, sty), leftwidth+node-spacing, 12pt+3pt)))
+          + updatechildren(getchildren(right, sty), leftwidth+node-spacing(sty), 12pt+3pt)))
       stack(dir: ttb, spacing: 3pt, top, bottom)
     }
   })
@@ -167,6 +172,11 @@
     let diff = lowest - measure(tree, sty).height
     if diff > 0pt { v(diff) }
   })
+
+  with-node-spacing = (ns, body) => {
+    show metadata.where(value: "x-bar-node-spacing"): h(ns)
+    body
+  }
 
   // Curry `node' with `label'.
   make-label = (label) => (..rest) => {
