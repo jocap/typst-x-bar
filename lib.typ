@@ -5,29 +5,54 @@
 #let with-node-spacing
 
 #{
-  let node-spacing(sty) = {
-    let ns = measure(metadata("x-bar-node-spacing"), sty).width
+  let context(f) = style(sty => f((
+    style: sty,
+    measure: (elem) => measure(elem, sty)
+  )))
+
+  let getcontent(elem, ctx) = {
+    if type(elem) == "content" {
+      while true {
+        if repr(elem.func()) == "style" {
+          elem = (elem.func)(ctx.style)
+        // } else if repr(elem.func()) == "locate" {
+        //   elem = (elem.func)(ctx.location)
+        } else {
+          return elem
+        }
+      }
+    } else {
+      elem
+    }
+  }
+
+  let m(elem, ctx) = {
+    measure(elem, ctx.style)
+  }
+
+  let node-spacing(ctx) = {
+    let ns = m(metadata("x-bar-node-spacing"), ctx).width
     if ns == 0pt { 8pt } else { ns }
   }
 
   // The `dx' value attached via metadata to each node/branch is the amount of horizontal space that the node/branch should be offset. For simple (non-branching) nodes, this is half of the node's width.
-  let getdx(x, sty) = {
+  let getdx(x, ctx) = {
     if type(x) == "content" {
-      x = if repr(x.func()) == "style" { (x.func)(sty) } else { x }
+      x = getcontent(x, ctx)
       if repr(x.func()) == "sequence" and x.children.first().func() == metadata {
         x.children.first().value.dx
       } else {
-        measure(x, sty).width/2
+        m(x, ctx).width/2
       }
     } else {
-      measure(x, sty).width/2
+      m(x, ctx).width/2
     }
   }
 
   // The `children' value attached via metadata to each node/branch contains an array of pairs that specify the horizontal and vertical position of each terminal in the tree. This information is used by `with-arrows'.
-  let getchildren(x, sty) = {
+  let getchildren(x, ctx) = {
     if type(x) == "content" {
-      x = if repr(x.func()) == "style" { (x.func)(sty) } else { x }
+      x = getcontent(x, ctx)
       if repr(x.func()) == "sequence" and x.children.first().func() == metadata {
         x.children.first().value.children
       } else {
@@ -51,22 +76,22 @@
       label
     } else {
       let term = term.pos().first()
-      style(sty => {
-        let tdx = getdx(term, sty)
-        let width = max(measure(label, sty).width, measure(term, sty).width)
+      context(ctx => {
+        let tdx = getdx(term, ctx)
+        let width = max(m(label, ctx).width, m(term, ctx).width)
         let (labeloffset, termoffset) = (0pt, 0pt)
-        if tdx < measure(label, sty).width/2 {
-          termoffset = measure(label, sty).width/2 - tdx
+        if tdx < m(label, ctx).width/2 {
+          termoffset = m(label, ctx).width/2 - tdx
         } else {
-          labeloffset = tdx - measure(label, sty).width/2
+          labeloffset = tdx - m(label, ctx).width/2
         }
         metadata((
-          dx: labeloffset + measure(label, sty).width/2,
-          children: updatechildren(getchildren(term, sty), termoffset, measure(label, sty).height+3pt)))
+          dx: labeloffset + m(label, ctx).width/2,
+          children: updatechildren(getchildren(term, ctx), termoffset, m(label, ctx).height+3pt)))
         stack(
           dir: ttb, spacing: 3pt,
           move(dx: labeloffset, label),
-          move(dx: termoffset, term))
+          move(dx: termoffset, getcontent(term, ctx)))
       })
     }
   }
@@ -85,7 +110,7 @@
   }
 
   // Create a unary or binary branch between given `terms'.
-  let branch(..terms) = style(sty => {
+  let branch(..terms) = context(ctx => {
     if terms.pos().len() == 1 {
       let term = terms.pos().first()
       if term == [] { term = "" }
@@ -93,14 +118,14 @@
       let s = if type(term) == str {
         term
       } else if type(term) == content {
-        to-string(if repr(term.func()) == "style" { (term.func)(sty) } else { term })
+        to-string(getcontent(term, ctx))
       } else {
         ""
       }
 
       let roof = s.match(regex(" ")) != none
-      let tdx = getdx(term, sty)
-      metadata((dx: tdx, children: ((term, (measure(term, sty).width/2, 3pt+12pt+measure(term, sty).height)),)))
+      let tdx = getdx(term, ctx)
+      metadata((dx: tdx, children: ((term, (m(term, ctx).width/2, 3pt+12pt+m(term, ctx).height)),)))
       stack(dir: ttb, spacing: 3pt,
         if term != "" {
           if roof {
@@ -110,30 +135,30 @@
               line(stroke: 0.5pt, length: 12pt, angle: 90deg))
           }
         },
-        term)
+        getcontent(term, ctx))
     } else if terms.pos().len() >= 2 {
       let (left, right) = terms.pos()
-      let leftwidth = measure(left, sty).width
-      let rightwidth = measure(right, sty).width
-      let width = leftwidth + rightwidth + node-spacing(sty)
-      let leftdx = getdx(left, sty)
-      let rightdx = getdx(right, sty)
-      let bottom = stack(dir: ltr, spacing: node-spacing(sty), left, right)
+      let leftwidth = m(left, ctx).width
+      let rightwidth = m(right, ctx).width
+      let width = leftwidth + rightwidth + node-spacing(ctx)
+      let leftdx = getdx(left, ctx)
+      let rightdx = getdx(right, ctx)
+      let bottom = stack(dir: ltr, spacing: node-spacing(ctx), getcontent(left, ctx), getcontent(right, ctx))
       let labelmid = leftdx + ((width - rightwidth + rightdx) - leftdx)/2
       let top = stack(dir: ltr,
         line(stroke: 0.5pt, start: (leftdx, 12pt), end: (labelmid,0pt)),
         line(stroke: 0.5pt, start: (labelmid - leftdx, 12pt), end: (0pt,0pt)))
       metadata((
         dx: labelmid,
-        children: updatechildren(getchildren(left, sty), 0pt, 12pt+3pt)
-          + updatechildren(getchildren(right, sty), leftwidth+node-spacing(sty), 12pt+3pt)))
+        children: updatechildren(getchildren(left, ctx), 0pt, 12pt+3pt)
+          + updatechildren(getchildren(right, ctx), leftwidth+node-spacing(ctx), 12pt+3pt)))
       stack(dir: ttb, spacing: 3pt, top, bottom)
     }
   })
 
   // Using the `children' value, return the terminal in `tree' that is equal to `term'. This is used by `with-arrows'.
-  let getchild(tree, term, sty) = {
-    let children = (tree.func)(sty).children.at(0).value.children
+  let getchild(tree, term, ctx) = {
+    let children = getcontent(tree, ctx).children.at(0).value.children
     let found
     for child in children {
       if child.first() == term {
@@ -147,11 +172,11 @@
   }
 
   // Display `tree' with movement arrows between the terminals specified in `pairs'.
-  with-arrows = (tree, ..pairs) => style(sty => {
+  with-arrows = (tree, ..pairs) => context(ctx => {
     let pairs = pairs.pos()
     let lowest = 0pt
     for pair in pairs {
-      let (d, t) = pair.map(term => getchild(tree, term, sty))
+      let (d, t) = pair.map(term => getchild(tree, term, ctx))
       if d.at(0) > t.at(0) {
         let tmp = d
         d = t
@@ -165,11 +190,11 @@
       place(dx: d.at(0), dy: d.at(1) + 4pt,
         polygon(fill: black, stroke: 0.5pt,
           (-w/2, h), (0pt, 0pt), (w/2, h)))
-      let low = measure(p, sty).height
+      let low = m(p, ctx).height
       if low > lowest { lowest = low }
     }
-    tree
-    let diff = lowest - measure(tree, sty).height
+    getcontent(tree, ctx)
+    let diff = lowest - m(tree, ctx).height
     if diff > 0pt { v(diff) }
   })
 
