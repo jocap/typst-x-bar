@@ -60,9 +60,10 @@
         } else {
           labeloffset = tdx - measure(label, sty).width/2
         }
+        let children = updatechildren(getchildren(term, sty), termoffset, measure(label, sty).height+3pt)
         metadata((
           dx: labeloffset + measure(label, sty).width/2,
-          children: updatechildren(getchildren(term, sty), termoffset, measure(label, sty).height+3pt)))
+          children: children))
         stack(
           dir: ttb, spacing: 3pt,
           move(dx: labeloffset, label),
@@ -100,7 +101,13 @@
 
       let roof = s.match(regex(" ")) != none
       let tdx = getdx(term, sty)
-      metadata((dx: tdx, children: ((term, (measure(term, sty).width/2, 3pt+12pt+measure(term, sty).height)),)))
+      let children = getchildren(term, sty)
+      if children == () {
+        children = ((term, (measure(term, sty).width/2, 3pt+12pt+measure(term, sty).height)),)
+      } else {
+        children = updatechildren(getchildren(term, sty), 0pt, 12pt+3pt)
+      }
+      metadata((dx: tdx, children: children))
       stack(dir: ttb, spacing: 3pt,
         if term != "" {
           if roof {
