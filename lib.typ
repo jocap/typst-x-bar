@@ -157,6 +157,7 @@
   with-arrows = (tree, ..pairs) => style(sty => {
     let pairs = pairs.pos()
     let lowest = 0pt
+    let ys = ()
     for pair in pairs {
       let (d, t) = pair.map(term => getchild(tree, term, sty))
       if d.at(0) > t.at(0) {
@@ -164,12 +165,19 @@
         d = t
         t = tmp
       }
-      let p = path(stroke: 0.5pt,
-        ((d.at(0), d.at(1) + 4pt), (0pt, -(t.at(1)-d.at(1)))),
-        ((t.at(0), t.at(1) + 4pt), (-(t.at(1)-d.at(1))/3, 36pt)))
+      d.at(1) = d.at(1) + 4pt
+      t.at(1) = t.at(1) + 4pt
+      let y = t.at(1) + 12pt
+      while y in ys { y = y + 12pt }
+      ys.push(y)
+      let p = path(stroke: (thickness: 0.5pt),
+        (d.at(0), d.at(1)),
+        (d.at(0), y),
+        (t.at(0), y),
+        (t.at(0), t.at(1)))
       place(p)
       let (w, h) = (3pt, 4pt)
-      place(dx: d.at(0), dy: d.at(1) + 4pt,
+      place(dx: d.at(0), dy: d.at(1),
         polygon(fill: black, stroke: 0.5pt,
           (-w/2, h), (0pt, 0pt), (w/2, h)))
       let low = measure(p, sty).height
