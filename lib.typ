@@ -159,7 +159,13 @@
     let lowest = 0pt
     let ys = ()
     for pair in pairs {
-      let (d, t) = pair.map(term => getchild(tree, term, sty))
+      let (d, t) = pair.map(term => {
+        let pos = getchild(tree, term, sty)
+        if pos == none {
+          panic("x-bar/with-arrows: could not find terminal " + repr(term))
+        }
+        pos
+    })
       if d.at(0) > t.at(0) {
         let tmp = d
         d = t
@@ -204,8 +210,8 @@
 
   // Create node functions for `label' at phrase-, bar- and head-level.
   make-category = (label) => (
-    make-label(label+"P"), 
-    make-label(label+"′"), 
+    make-label(label+"P"),
+    make-label(label+"′"),
     make-label(label))
 }
 
