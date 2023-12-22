@@ -44,13 +44,12 @@
   }
 
   // Place `label' above `term'. If `term' is content returned by `node' or `branch', then position it correctly according to the attached metadata.
-  let node(label, ..term) = {
+  let node(label, term) = {
     let max(a, b) = if a > b { a } else { b }
 
-    if term.pos().len() == 0 {
+    if term == none {
       label
     } else {
-      let term = term.pos().first()
       style(sty => {
         let tdx = getdx(term, sty)
         let width = max(measure(label, sty).width, measure(term, sty).width)
@@ -118,7 +117,7 @@
           }
         },
         term)
-    } else if terms.pos().len() >= 2 {
+    } else if terms.pos().len() == 2 {
       let (left, right) = terms.pos()
       let leftwidth = measure(left, sty).width
       let rightwidth = measure(right, sty).width
@@ -135,6 +134,8 @@
         children: updatechildren(getchildren(left, sty), 0pt, 12pt+3pt)
           + updatechildren(getchildren(right, sty), leftwidth+node-spacing(sty), 12pt+3pt)))
       stack(dir: ttb, spacing: 3pt, top, bottom)
+    } else {
+      panic("x-bar/branch: only unary/binary branches supported")
     }
   })
 
@@ -202,7 +203,7 @@
   // Curry `node' with `label'.
   make-label = (label) => (..rest) => {
     if rest.pos().len() == 0 {
-      node(label)
+      node(label, none)
     } else {
       node(label, branch(..rest))
     }
