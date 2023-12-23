@@ -7,7 +7,11 @@
 #{
   let node-spacing(sty) = {
     let ns = measure(metadata("x-bar-node-spacing"), sty).width
-    if ns == 0pt { 8pt } else { ns }
+    if ns == 0pt {
+        0.7*measure(block(height: 1em), sty).height
+      } else {
+        ns
+    }
   }
 
   // The `dx' value attached via metadata to each node/branch is the amount of horizontal space that the node/branch should be offset. For simple (non-branching) nodes, this is half of the node's width.
@@ -44,8 +48,9 @@
   }
 
   // Place `label' above `term'. If `term' is content returned by `node' or `branch', then position it correctly according to the attached metadata.
-  let node(label, term) = {
+  let node(label, term, i: none) = {
     let max(a, b) = if a > b { a } else { b }
+    if i != none { label = label + sub(i) }
 
     if term == none {
       label
@@ -59,12 +64,12 @@
         } else {
           labeloffset = tdx - measure(label, sty).width/2
         }
-        let children = updatechildren(getchildren(term, sty), termoffset, measure(label, sty).height+3pt)
+        let children = updatechildren(getchildren(term, sty), termoffset, measure(label, sty).height+0.27em)
         metadata((
           dx: labeloffset + measure(label, sty).width/2,
           children: children))
         stack(
-          dir: ttb, spacing: 3pt,
+          dir: ttb, spacing: 0.27em,
           move(dx: labeloffset, label),
           move(dx: termoffset, term))
       })
@@ -102,18 +107,18 @@
       let tdx = getdx(term, sty)
       let children = getchildren(term, sty)
       if children == () {
-        children = ((term, (measure(term, sty).width/2, 3pt+12pt+measure(term, sty).height)),)
+        children = ((term, (measure(term, sty).width/2, 0.27em+1em+measure(term, sty).height)),)
       } else {
-        children = updatechildren(getchildren(term, sty), 0pt, 12pt+3pt)
+        children = updatechildren(getchildren(term, sty), 0pt, 1em+0.27em)
       }
       metadata((dx: tdx, children: children))
-      stack(dir: ttb, spacing: 3pt,
+      stack(dir: ttb, spacing: 0.27em,
         if term != "" {
           if roof {
-            polygon(stroke: 0.5pt, (0pt, 12pt), (tdx, 0pt), (tdx*2, 12pt))
+            polygon(stroke: 0.5pt, (0pt, 1em), (tdx, 0pt), (tdx*2, 1em))
           } else {
             move(dx: tdx - 0.5pt,
-              line(stroke: 0.5pt, length: 12pt, angle: 90deg))
+              line(stroke: 0.5pt, length: 1em, angle: 90deg))
           }
         },
         term)
@@ -127,13 +132,13 @@
       let bottom = stack(dir: ltr, spacing: node-spacing(sty), left, right)
       let labelmid = leftdx + ((width - rightwidth + rightdx) - leftdx)/2
       let top = stack(dir: ltr,
-        line(stroke: 0.5pt, start: (leftdx, 12pt), end: (labelmid,0pt)),
-        line(stroke: 0.5pt, start: (labelmid - leftdx, 12pt), end: (0pt,0pt)))
+        line(stroke: 0.5pt, start: (leftdx, 1em), end: (labelmid,0pt)),
+        line(stroke: 0.5pt, start: (labelmid - leftdx, 1em), end: (0pt,0pt)))
       metadata((
         dx: labelmid,
-        children: updatechildren(getchildren(left, sty), 0pt, 12pt+3pt)
-          + updatechildren(getchildren(right, sty), leftwidth+node-spacing(sty), 12pt+3pt)))
-      stack(dir: ttb, spacing: 3pt, top, bottom)
+        children: updatechildren(getchildren(left, sty), 0pt, 1em+0.27em)
+          + updatechildren(getchildren(right, sty), leftwidth+node-spacing(sty), 1em+0.27em)))
+      stack(dir: ttb, spacing: 0.27em, top, bottom)
     } else {
       panic("x-bar/branch: only unary/binary branches supported")
     }
@@ -172,10 +177,10 @@
         d = t
         t = tmp
       }
-      d.at(1) = d.at(1) + 4pt
-      t.at(1) = t.at(1) + 4pt
-      let y = t.at(1) + 12pt
-      while y in ys { y = y + 12pt }
+      d.at(1) = d.at(1) + 0.36em
+      t.at(1) = t.at(1) + 0.36em
+      let y = t.at(1) + 1em
+      while y in ys { y = y + 1em }
       ys.push(y)
       let p = path(stroke: (thickness: 0.5pt),
         (d.at(0), d.at(1)),
@@ -183,7 +188,7 @@
         (t.at(0), y),
         (t.at(0), t.at(1)))
       place(p)
-      let (w, h) = (3pt, 4pt)
+      let (w, h) = (0.27em, 0.36em)
       place(dx: d.at(0), dy: d.at(1),
         polygon(fill: black, stroke: 0.5pt,
           (-w/2, h), (0pt, 0pt), (w/2, h)))
@@ -203,9 +208,9 @@
   // Curry `node' with `label'.
   make-label = (label) => (..rest) => {
     if rest.pos().len() == 0 {
-      node(label, none)
+      node(label, none, ..rest.named())
     } else {
-      node(label, branch(..rest))
+      node(label, branch(..rest), ..rest.named())
     }
   }
 
@@ -216,7 +221,7 @@
     make-label(label))
 }
 
-#let _P = make-label(block(height: -6pt))
+#let _P = make-label(block(height: -0.53em))
 #let Spec = make-label("Spec")
 
 #let (AdvP, Adv1, Adv0) = make-category("Adv")
@@ -228,6 +233,7 @@
 #let (ForceP, Force1, Force0) = make-category("Force")
 #let (IP, I1, I0) = make-category("I")
 #let (NP, N1, N0) = make-category("N")
+#let (AP, A1, A0) = make-category("A")
 #let (NegP, Neg1, Neg0) = make-category("Neg")
 #let (PP, P1, P0) = make-category("P")
 #let (PartP, Part1, Part0) = make-category("Part")
